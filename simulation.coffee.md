@@ -118,7 +118,7 @@ We also need a way to frag our zombies.  Let say that every defection against a 
 
 		contest = (agent) ->
 			agent.score = 0
-			last_game = []
+			last_game = []	
 			rounds = 10
 			neighbours = agent.space.neighbourhood(agent.x, agent.y)
 			for neighbour in neighbours
