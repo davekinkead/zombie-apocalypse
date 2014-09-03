@@ -15,6 +15,20 @@ First up, lets define some payoff matrixes for various games.  A Prisoner's Dile
 			payoffs[game.toString()]
 
 
+		zombie_apocalypse = (game) ->
+			payoffs = {
+				"1,2": [-100,5],
+				"1,1": [5,5],
+				"1,0": [-100,0],
+				"0,2": [0,-100],
+				"0,1": [0,-100],
+				"0,0": [-100,-100],
+				"2,2": [0,0],
+				"2,1": [5,-100],
+				"2,0": [-100,0],			}
+			payoffs[game.toString()]
+
+
 There are 8 possible deterministic single round strategies a player could employ in any 2 player game.  These are specified by their inital move `i`, responding to cooperation move `c`, and responding to defection move `d`.  We'll also name these and give them pretty colours and store them in a list.
 
 
@@ -26,7 +40,8 @@ There are 8 possible deterministic single round strategies a player could employ
 			{ i: 1, c: 0, d: 0, name: "CTAD", color: "yellow" },
 			{ i: 1, c: 0, d: 1, name: "FPRV", color: "lime" },
 			{ i: 1, c: 1, d: 0, name: "FT4T", color: "lightblue" },
-			{ i: 1, c: 1, d: 1, name: "ALLC", color: "violet" }
+			{ i: 1, c: 1, d: 1, name: "ALLC", color: "violet" },
+			{ i: 2, c: 2, d: 2, name: "ZOMB", color: "black" }
 		]
 
 
@@ -98,6 +113,8 @@ In spacial arranements, everybody is next to somebody - their neighbour.  A neig
 
 Now we turn to our game.  The browser will trigger the main game interface `contest(agent)` every tick.  Each agent finds their neighbours and plays against them for a number or rounds, with the agent score calcuated from the payoff matrix.  In every contest, we set the agent score and last_game values to 0.  We also throw in some Brownian motion to encourage disequilibrium.
 
+We also need a way to frag our zombies.  Let say that every defection against a zombie leads to a chance the zombie will be killed.
+
 
 		contest = (agent) ->
 			agent.score = 0
@@ -107,7 +124,7 @@ Now we turn to our game.  The browser will trigger the main game interface `cont
 			for neighbour in neighbours
 				for round in [0..rounds]
 					last_game = [agent.play(neighbour, last_game), neighbour.play(agent, last_game)]
-					scores = prisoners_dilemma last_game
+					scores = zombie_apocalypse last_game
 					agent.score += scores[0]
 			walk agent
 			agent
@@ -125,12 +142,14 @@ We also need to define the interaction between agents.  The initial move is dict
 
 Agents also need to update their strategy after each round.  We will do this only after all contests in a tick have finished and scores have been calculated.
 
+Humans should become a zombe with some chance every time they cooperate with one.
 
 		update = (agent) ->
-			neighbours = agent.space.neighbourhood(agent.x, agent.y)
-			max = neighbours.reduce (a, b) -> {score: Math.max a.score, b.score}
-			winners = (neighbour for neighbour in neighbours when neighbour.score is max.score)
-			agent.strategy = winners[Math.floor Math.random() * winners.length].strategy 
+			unless agent.strategy.name is "ZOMB"
+				neighbours = agent.space.neighbourhood(agent.x, agent.y)
+				max = neighbours.reduce (a, b) -> {score: Math.max a.score, b.score}
+				winners = (neighbour for neighbour in neighbours when neighbour.score is max.score)
+				agent.strategy = winners[Math.floor Math.random() * winners.length].strategy 
 			agent
 
 
@@ -153,7 +172,7 @@ Now that we have defined our model, we need some functions to initiate and contr
 
 
 		agents = (height, width) ->
-			space = new Space(height, width, [250, 250, 250, 250, 250, 250, 250, 250])
+			space = new Space(height, width, [250, 250, 250, 250, 250, 250, 250, 250, 250])
 			space.cluster 1.0, 0.0
 
 
